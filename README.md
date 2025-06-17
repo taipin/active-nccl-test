@@ -17,8 +17,8 @@ To run as a standalone job\
 The default values of the prameters are:\
 `<partition name> = compute`\
 `<gpus per node> = 8`\
-`<min perf> = 100`\
-`<hist hours> = 24`\
+`<min perf> = 100`  (in GB/s, criteria for _good_ node and _low_ node) \
+`<hist hours> = 24` (in hours, nodes updated within this amount of hours will not be (re)tested)\
 `<drain bad node> = 0 (do not drain, set to 1 to drain)`\
 `<drain low node> = 0 (do not drain, set to 1 to drain)`\
 To run as a crontab job\
