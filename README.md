@@ -1,44 +1,47 @@
-*This repository acts as a template for all of Oracle’s GitHub repositories. It contains information about the guidelines for those repositories. All files and sections contained in this template are mandatory, and a GitHub app ensures alignment with these guidelines. To get started with a new repository, replace the italic paragraphs with the respective text for your project.*
+# active-nccl-test
 
-# Project name
+Scripts to run NCCL tests actively on a production Slurm cluster
 
-*Describe your project's features, functionality and target audience*
-
-## Installation
-
-*Provide detailed step-by-step installation instructions. You can name this section **How to Run** or **Getting Started** instead of **Installation** if that's more acceptable for your project*
+## How to Run
+**Get files in place**\
+Make sure dir /home/ubuntu is shared among all compute nodes and the controller node.\
+`mkdir /home/ubuntu/oci_active_nccl`\
+`cd /home/ubuntu/oci_active_nccl`\
+`wget https://raw.githubusercontent.com/taipin/active-nccl-test/refs/heads/main/nccl_controller.sh ./`\
+`wget https://raw.githubusercontent.com/taipin/active-nccl-test/refs/heads/main/nccl_pair.sbatch ./`\
+`wget https://raw.githubusercontent.com/taipin/active-nccl-test/refs/heads/main/nccl.sh ./`\
+`chmod +x nccl_controller.sh nccl.sh`\
+**Run the scripts**\
+To run as a standalone job\
+`/home/ubuntu/oci_active_nccl/nccl_controller.sh <partition name> <gpus per node> <min perf> <hist hours> <drain bad node> <drain low node>`\
+The default values of the prameters are:\
+`<partition name> = compute`\
+`<gpus per node> = 8`\
+`<min perf> = 100`\
+`<hist hours> = 24`\
+`<drain bad node> = 0 (do not drain, set to 1 to drain)`\
+`<drain low node> = 0 (do not drain, set to 1 to drain)`\
+To run as a crontab job\
+`crontab -e`\
+then paste the following (it will launch the script every 5 minutes) to the end of and save it. One can customize the time interval, but recommendation is not to make the interval less than 2 minutes.\
+`*/5 * * * * /home/ubuntu/oci_active_nccl/nccl_controller.sh <partition name> <gpus per node> <min perf> <hist hours> <drain bad node> <drain low node> >> /home/ubuntu/oci_active_nccl/LOG 2>&1` \
+**Example 1** Running every 5 minutes with all default paramaters:\
+`*/5 * * * * /home/ubuntu/oci_active_nccl/nccl_controller.sh >> /home/ubuntu/oci_active_nccl/LOG 2>&1` \
+**Example 2** Running every 5 minutes and drain the bad nodes (see Documentation below for difference between a bad node and a low performing node):\
+`*/5 * * * * /home/ubuntu/oci_active_nccl/nccl_controller.sh a10 1 1 24 1 0 >> /home/ubuntu/oci_active_nccl/LOG 2>&1`
 
 ## Documentation
 
-*Developer-oriented documentation can be published on GitHub, but all product documentation must be published on <https://docs.oracle.com>*
-
-## Examples
-
-*Describe any included examples or provide a link to a demo/tutorial*
+The scripts will find idle nodes in the partition. If all nodes have been tested with good results (Allreduce BW > \<min perf\>) in the past \<hist hours\>, then it will exit. Otherwise it will test a random pair of nodes from the idle list. If this test is good, it will update the good node list with node names and timestamps. If the test is bad for this initial pair of nodes, then it will further test each of the nodes from this pair - if this further test is good, it will update the good node list; if the test is bad, it will update the bad node list (or low node list, depending on the performance number obtained) with node names, timestamps and performance number. A bad node is a node which fails to get a valid NCCL Allreduce BW due to various job errors.
 
 ## Help
 
-*Inform users on where to get help or how to receive official support from Oracle (if applicable)*
+
 
 ## Contributing
 
-*If your project has specific contribution requirements, update the CONTRIBUTING.md file to ensure those requirements are clearly explained*
-
-This project welcomes contributions from the community. Before submitting a pull request, please [review our contribution guide](./CONTRIBUTING.md)
 
 ## Security
 
 Please consult the [security guide](./SECURITY.md) for our responsible security vulnerability disclosure process
 
-## License
-
-*The correct copyright notice format for both documentation and software is*
-    "Copyright (c) [year,] year Oracle and/or its affiliates."
-*You must include the year the content was first released (on any platform) and the most recent year in which it was revised*
-
-Copyright (c) 2023 Oracle and/or its affiliates.
-
-*Replace this statement if your project is not licensed under the UPL*
-
-Released under the Universal Permissive License v1.0 as shown at
-<https://oss.oracle.com/licenses/upl/>.
