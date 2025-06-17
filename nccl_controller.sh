@@ -1,14 +1,13 @@
 #!/bin/bash
 
-# do customize the following 5 parameters
-mypartition=compute    # partition name of the cluster
-gpus_per_node=8        # 8 for BM H100 and A100, 4/2/1 for A10 BM, VM2 and VM1
-perf_required=100      # for nccl allreduce bw in GB/s, adjust accordingly
-((max_hist=24*3600))   # good nodes tested within the past 24 hours will not be picked
-drain_bad_node=0       # 1 - drain bad node, any other integer - do not drain bad node
-drain_low_node=0       # 1 - drain low node, any other integer - do not drain low node
+mypartition=${1:-compute}    # partition name of the cluster
+gpus_per_node=${2:-8}        # 8 for BM H100 and A100, 4/2/1 for A10 BM, VM2 and VM1
+perf_required=${3:-100}      # for nccl allreduce bw in GB/s, adjust accordingly
+hist_hours=${4:-24}          # good nodes tested within the past 24 hours will not be picked
+((max_hist=hist_hours*3600))
+drain_bad_node=${5:-0}       # 1 - drain bad node, any other integer - do not drain bad node
+drain_low_node=${6:-0}       # 1 - drain low node, any other integer - do not drain low node
 
-# do not change lines below
 hist_file="/home/ubuntu/oci_active_nccl/good_nodes_${mypartition}.log"
 
 declare -A hist_dict   # for good nodes and their latest timestamps
