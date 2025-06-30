@@ -67,8 +67,13 @@ hostfile=/home/ubuntu/oci_active_nccl/tmphostfile.${SLURM_JOB_ID}
 scontrol show hostname $SLURM_NODELIST > $hostfile
 
 # Run nccl job as usual, adding timeout
+
+# We are not using the return code of nccl.sh
+#timeout --preserve-status --foreground 60s /home/ubuntu/oci_active_nccl/nccl.sh 1 $hostfile 
+#echo "nccl.sh rc = $?"
+#cp slurm-${SLURM_JOB_ID}.out LOG_${SLURM_JOB_ID}
 timeout --preserve-status --foreground 60s /home/ubuntu/oci_active_nccl/nccl.sh 1 $hostfile 2>&1 | tee LOG_${SLURM_JOB_ID}
-echo "nccl.sh rc = $?"
+
 # take timestamp
 current_time=`date +%FT%T`
 
@@ -110,3 +115,5 @@ fi
 
 # Do not keep temporary log file and hostfile
 rm -f LOG_${SLURM_JOB_ID} $hostfile
+
+exit $perf_line_rc
