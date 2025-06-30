@@ -61,6 +61,17 @@ get_one_idle () {
     done
 }
 
+wait_for_file () {
+    file=$1
+    while true; do
+        if [ -e "$file" ]; then
+            sleep 1
+            break
+        fi
+        sleep $2
+    done
+}
+
 #-----------------------
 # get idle node
 sinfo_line=`sinfo -p $mypartition -t idle 2>&1 | grep " idle "`
@@ -133,7 +144,9 @@ node2=`scontrol show hostname $job_nodelist | tail -1`
 
 #Double check the job is finished and has a valid performance number
 if [[ "$job_state" == "COMPLETED" && $sbatch_rc -eq 0 ]]; then
-    job_perf=`grep "Avg bus b" slurm-${job_id}.out | awk '{print $6}'`
+    # Sometimes there is a lag for slurm log file
+    wait_for_file /home/ubuntu/oci_active_nccl/slurm-${job_id}.out 2
+    job_perf=`grep "Avg bus b" /home/ubuntu/oci_active_nccl/slurm-${job_id}.out | awk '{print $6}'`
     echo "node pair ($node1, $node2) job_perf = $job_perf  perf_required = $perf_required"
     if (( `echo "${job_perf} < $perf_required" | bc -l` )); then
         # low performing, further test the pair. Note the arguments are different
