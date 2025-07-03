@@ -92,7 +92,7 @@ do
       ;;
   esac
 
-  timeout --preserve-status --foreground 40s mpirun --mca pml ucx \
+  mpirun --mca pml ucx \
   --mca coll ^hcoll \
   --bind-to none \
   -npernode $SLURM_GPUS_PER_NODE \
@@ -110,7 +110,6 @@ do
   -x NCCL_IB_GID_INDEX=3 \
   -x NCCL_NET=$NCCL_NET \
   -x NCCL_SOCKET_IFNAME=$NCCL_SOCKET_IFNAME \
-  --timeout 40 \
   --np $np --hostfile $hostfile /opt/oci-hpc/nccl-test/build/all_reduce_perf $size_opts
   mpirun_rc=$?
 
