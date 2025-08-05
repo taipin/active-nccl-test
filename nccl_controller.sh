@@ -108,10 +108,10 @@ wait_for_file () {
 for host in `sinfo -Neh -p $mypartition -t idle,mix,alloc | cut -d ' ' -f 1`; do all_host_list+=("$host"); done
 
 # get idle node
-sinfo_line=`sinfo -p $mypartition -t idle 2>&1 | grep " idle "`
+sinfo_line=`sinfo --noheader -p $mypartition -t idle`
 sinfo_rc=$?
 #echo "sinfo_line = $sinfo_line"
-# make sure grep gets (at least) one matching line
+# make sure sinfo works
 if [[ $sinfo_rc -ne 0 ]]; then
     echo "sinfo failed to get idle info"
     exit 1
