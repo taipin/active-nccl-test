@@ -113,14 +113,14 @@ sinfo_rc=$?
 #echo "sinfo_line = $sinfo_line"
 # make sure sinfo works
 if [[ $sinfo_rc -ne 0 ]]; then
-    echo "sinfo failed to get idle info"
+    echo "`date +%FT%T`  Partition: $mypartition, sinfo failed to get idle info"
     exit 1
 fi
 
 nnodes_idle=`echo $sinfo_line|cut -d ' ' -f 4`
 #echo "nnodes_idle = $nnodes_idle"
 if [[ $nnodes_idle -lt 2 ]]; then
-    echo "less than 2 idle nodes"
+    echo "`date +%FT%T`  Partition: $mypartition, less than 2 idle nodes"
     exit 2
 fi
 
@@ -145,7 +145,7 @@ if [[ $nnodes -lt 2 ]]; then
         # we have one untested idle node and one or more tested idle nodes (good nodes). so we pair the untested node with any good ones and exit afterwards
         # take one node from idle_list
         get_one_idle $host_candidates
-        sbatch --time=$TL --no-requeue -w $host_candidates,$node_b -N 2 --gpus-per-node=$gpus_per_node --ntasks-per-node=$gpus_per_node -p $mypartition ${mydir}/nccl_pair.sbatch $perf_required $host_candidates $drain_bad_node $drain_low_node
+        sbatch --time=$TL --deadline=now+2minutes --no-requeue -w $host_candidates,$node_b -N 2 --gpus-per-node=$gpus_per_node --ntasks-per-node=$gpus_per_node -p $mypartition ${mydir}/nccl_pair.sbatch $perf_required $host_candidates $drain_bad_node $drain_low_node
         #sbatch --time=$TL --no-requeue -w $host_candidates -N 2 --gpus-per-node=$gpus_per_node --ntasks-per-node=$gpus_per_node -p $mypartition ${mydir}/nccl_pair.sbatch $perf_required $host_candidates $drain_bad_node $drain_low_node
         exit 0
     else
@@ -158,7 +158,7 @@ fi
 # Submit a job to test one pair from host_candidates. Can remove time limit, but need --wait
 # 99.99% will get nodes, but what if we do not get? do not want to put the job in the wait queue
 
-sbatch_info=`sbatch --time=$TL --no-requeue -w $host_candidates -N 2 --gpus-per-node=$gpus_per_node --ntasks-per-node=$gpus_per_node -p $mypartition --wait ${mydir}/nccl_pair.sbatch $perf_required`
+sbatch_info=`sbatch --time=$TL --deadline=now+2minutes --no-requeue -w $host_candidates -N 2 --gpus-per-node=$gpus_per_node --ntasks-per-node=$gpus_per_node -p $mypartition --wait ${mydir}/nccl_pair.sbatch $perf_required`
 sbatch_rc=$?
 #echo "sbatch_rc = $sbatch_rc"
 echo "sbatch_info = $sbatch_info"
@@ -197,8 +197,8 @@ if [[ "$job_state" == "COMPLETED" && $sbatch_rc -eq 0 ]]; then
         # A work-around is to find a partner node and use it. 
         # For simplicity, we assume the idle list does not change. 
         # If it does change, then the job will be queued - not a big deal.
-        sbatch --time=$TL --no-requeue -w $node1,$node_b -N 2 --gpus-per-node=$gpus_per_node --ntasks-per-node=$gpus_per_node -p $mypartition ${mydir}/nccl_pair.sbatch $perf_required $node1 $drain_bad_node $drain_low_node
-        sbatch --time=$TL --no-requeue -w $node2,$node_b -N 2 --gpus-per-node=$gpus_per_node --ntasks-per-node=$gpus_per_node -p $mypartition ${mydir}/nccl_pair.sbatch $perf_required $node2 $drain_bad_node $drain_low_node
+        sbatch --time=$TL --deadline=now+2minutes --no-requeue -w $node1,$node_b -N 2 --gpus-per-node=$gpus_per_node --ntasks-per-node=$gpus_per_node -p $mypartition ${mydir}/nccl_pair.sbatch $perf_required $node1 $drain_bad_node $drain_low_node
+        sbatch --time=$TL --deadline=now+2minutes --no-requeue -w $node2,$node_b -N 2 --gpus-per-node=$gpus_per_node --ntasks-per-node=$gpus_per_node -p $mypartition ${mydir}/nccl_pair.sbatch $perf_required $node2 $drain_bad_node $drain_low_node
     else
         # both nodes are good, do nothing
         exit 0
@@ -218,9 +218,9 @@ elif [[ $job_state == CANCELLED* ]]; then
         echo "further testing the other node"
         #TODO check Slurm release update or find a node to pair with node1 and node2
         if [[ "$squeue_node" == "$node1" ]]; then
-            sbatch --time=$TL --no-requeue -w $node2,$node_b -N 2 --gpus-per-node=$gpus_per_node --ntasks-per-node=$gpus_per_node -p $mypartition ${mydir}/nccl_pair.sbatch $perf_required $node1 $drain_bad_node $drain_low_node
+            sbatch --time=$TL --deadline=now+2minutes --no-requeue -w $node2,$node_b -N 2 --gpus-per-node=$gpus_per_node --ntasks-per-node=$gpus_per_node -p $mypartition ${mydir}/nccl_pair.sbatch $perf_required $node1 $drain_bad_node $drain_low_node
         elif [[ "$squeue_node" == "$node2" ]]; then
-            sbatch --time=$TL --no-requeue -w $node1,$node_b -N 2 --gpus-per-node=$gpus_per_node --ntasks-per-node=$gpus_per_node -p $mypartition ${mydir}/nccl_pair.sbatch $perf_required $node1 $drain_bad_node $drain_low_node
+            sbatch --time=$TL --deadline=now+2minutes --no-requeue -w $node1,$node_b -N 2 --gpus-per-node=$gpus_per_node --ntasks-per-node=$gpus_per_node -p $mypartition ${mydir}/nccl_pair.sbatch $perf_required $node1 $drain_bad_node $drain_low_node
         else
             echo "both nodes are in CG - rare case, exiting"
             exit 5
@@ -229,13 +229,13 @@ elif [[ $job_state == CANCELLED* ]]; then
         # CANCELLED+ but not CG
         #TODO check Slurm release update or find a node to pair with node1 and node2
         echo "further testing the bad pairs ($node1 , $node2)"
-        sbatch --time=$TL --no-requeue -w $node1,$node_b -N 2 --gpus-per-node=$gpus_per_node --ntasks-per-node=$gpus_per_node -p $mypartition ${mydir}/nccl_pair.sbatch $perf_required $node1 $drain_bad_node $drain_low_node
-        sbatch --time=$TL --no-requeue -w $node2,$node_b -N 2 --gpus-per-node=$gpus_per_node --ntasks-per-node=$gpus_per_node -p $mypartition ${mydir}/nccl_pair.sbatch $perf_required $node2 $drain_bad_node $drain_low_node
+        sbatch --time=$TL --deadline=now+2minutes --no-requeue -w $node1,$node_b -N 2 --gpus-per-node=$gpus_per_node --ntasks-per-node=$gpus_per_node -p $mypartition ${mydir}/nccl_pair.sbatch $perf_required $node1 $drain_bad_node $drain_low_node
+        sbatch --time=$TL --deadline=now+2minutes --no-requeue -w $node2,$node_b -N 2 --gpus-per-node=$gpus_per_node --ntasks-per-node=$gpus_per_node -p $mypartition ${mydir}/nccl_pair.sbatch $perf_required $node2 $drain_bad_node $drain_low_node
     fi
 else
     echo "node pair ($node1, $node2) FAILED or TIMEOUT"
     echo "further testing the bad pairs ($node1 , $node2)"
     #TODO check Slurm release update or find a node to pair with node1 and node2
-    sbatch --time=$TL --no-requeue -w $node1,$node_b -N 2 --gpus-per-node=$gpus_per_node --ntasks-per-node=$gpus_per_node -p $mypartition ${mydir}/nccl_pair.sbatch $perf_required $node1 $drain_bad_node $drain_low_node
-    sbatch --time=$TL --no-requeue -w $node2,$node_b -N 2 --gpus-per-node=$gpus_per_node --ntasks-per-node=$gpus_per_node -p $mypartition ${mydir}/nccl_pair.sbatch $perf_required $node2 $drain_bad_node $drain_low_node
+    sbatch --time=$TL --deadline=now+2minutes --no-requeue -w $node1,$node_b -N 2 --gpus-per-node=$gpus_per_node --ntasks-per-node=$gpus_per_node -p $mypartition ${mydir}/nccl_pair.sbatch $perf_required $node1 $drain_bad_node $drain_low_node
+    sbatch --time=$TL --deadline=now+2minutes --no-requeue -w $node2,$node_b -N 2 --gpus-per-node=$gpus_per_node --ntasks-per-node=$gpus_per_node -p $mypartition ${mydir}/nccl_pair.sbatch $perf_required $node2 $drain_bad_node $drain_low_node
 fi
