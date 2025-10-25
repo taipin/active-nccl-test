@@ -107,9 +107,9 @@ wait_for_file () {
 # get all non-drain nodes
 for host in `sinfo -Neh -p $mypartition -t idle,mix,alloc | cut -d ' ' -f 1`; do all_host_list+=("$host"); done
 
-# get idle node
-sinfo_line=`sinfo --noheader -p $mypartition -t idle`
-sinfo_rc=$?
+# get idle node - -t idle alone is not enough
+sinfo_line=`sinfo --noheader -p $mypartition -t idle | grep idle`
+sinfo_rc=$?  # Not really a return code for sinfo now, but no harm
 #echo "sinfo_line = $sinfo_line"
 # make sure sinfo works
 if [[ $sinfo_rc -ne 0 ]]; then
